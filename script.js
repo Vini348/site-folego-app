@@ -1,2 +1,40 @@
-const menu=document.querySelector('.menu');menu?.addEventListener('click',()=>{let nav=document.querySelector('.nav nav');if(!nav)return;const open=nav.dataset.open==='1';nav.dataset.open=open?'0':'1';Object.assign(nav.style,open?{display:'none'}:{display:'flex',position:'absolute',top:'69px',left:'0',right:'0',padding:'24px',background:'#10140d',flexDirection:'column',gap:'22px',border:'1px solid #293024'});});
-const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.animate([{opacity:0,transform:'translateY(24px)'},{opacity:1,transform:'translateY(0)'}],{duration:700,easing:'cubic-bezier(.2,.7,.2,1)',fill:'both'});observer.unobserve(e.target)}}),{threshold:.12});document.querySelectorAll('.manifesto-main,.feature,.quote-inner,.closing-content').forEach(el=>observer.observe(el));
+(() => {
+  const menuButton = document.querySelector('.menu');
+  const nav = document.querySelector('.nav nav');
+  menuButton?.addEventListener('click', () => {
+    const open = menuButton.getAttribute('aria-expanded') === 'true';
+    menuButton.setAttribute('aria-expanded', String(!open));
+    menuButton.setAttribute('aria-label', open ? 'Abrir menu' : 'Fechar menu');
+    nav?.classList.toggle('is-open', !open);
+  });
+  nav?.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
+    nav.classList.remove('is-open'); menuButton?.setAttribute('aria-expanded', 'false');
+  }));
+
+  const revealTargets = document.querySelectorAll(
+    '.hero-copy,.hero-visual,.hero-bottom,.manifesto-main,.product-intro,.feature,.quote-inner,.closing-content,.footer'
+  );
+  revealTargets.forEach((el, index) => { el.classList.add('reveal'); el.style.setProperty('--reveal-delay', `${Math.min(index % 4, 3) * 90}ms`); });
+
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver(entries => entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    }), { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
+    revealTargets.forEach(el => observer.observe(el));
+  } else revealTargets.forEach(el => el.classList.add('is-visible'));
+
+  // Start decorative motion only while the hero phone is on screen.
+  const heroVisual = document.querySelector('.hero-visual');
+  if (heroVisual && 'IntersectionObserver' in window) {
+    const motionObserver = new IntersectionObserver(([entry]) => {
+      heroVisual.classList.toggle('motion-active', entry.isIntersecting);
+    }, { threshold: 0.15 });
+    motionObserver.observe(heroVisual);
+  } else heroVisual?.classList.add('motion-active');
+
+  // Respect reduced-motion preferences and defer non-critical media until visible.
+  document.querySelectorAll('img[loading="lazy"]').forEach(img => { img.decoding = 'async'; });
+})();
